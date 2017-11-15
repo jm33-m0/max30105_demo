@@ -5,17 +5,23 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:max30105_demo"
         mc:Ignorable="d"
-        Title="Onion Reader" Height="150" Width="300"
+        Title="Onion Reader" Height="180" Width="400"
         WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing"
         ResizeMode="NoResize">
     <Grid>
-        <TextBlock Name="heartRateVal" HorizontalAlignment="Left" Margin="31,70,0,0" TextWrapping="Wrap" VerticalAlignment="Top" RenderTransformOrigin="0.261,2.842" Height="30" Width="57" Text="0 bpm"/>
-        <Label Content="Heart Rate" HorizontalAlignment="Left" Margin="22,38,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.495,0.816"/>
-        <TextBlock Name="spo2Val" HorizontalAlignment="Left" Margin="189,70,0,0" TextWrapping="Wrap" Text="0%" VerticalAlignment="Top" Width="49" Height="30"/>
-        <Label Content="SPO2" HorizontalAlignment="Left" Margin="175,38,0,0" VerticalAlignment="Top"/>
-        <ComboBox Name="portsComboBox" HorizontalAlignment="Left" Margin="118,10,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="ComboBox_SelectionChanged"/>
-        <Label Content="Port :" HorizontalAlignment="Left" Margin="40,10,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.101,0.298" Height="28"/>
-        <Button Name="button" Content="Start" HorizontalAlignment="Left" Margin="97,80,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+        <TextBlock Name="heartRateVal" HorizontalAlignment="Left" Margin="31,54,0,0" TextWrapping="Wrap" VerticalAlignment="Top" RenderTransformOrigin="0.261,2.842" Height="30" Width="57" Text="0 bpm"/>
+        <Label Content="Heart Rate" HorizontalAlignment="Left" Margin="22,14,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.495,0.816"/>
+        <TextBlock Name="spo2Val" HorizontalAlignment="Left" Margin="126,54,0,0" TextWrapping="Wrap" Text="0%" VerticalAlignment="Top" Width="49" Height="30"/>
+        <Label Content="SPO2" HorizontalAlignment="Left" Margin="117,14,0,0" VerticalAlignment="Top"/>
+        <ComboBox Name="portsComboBox" HorizontalAlignment="Left" Margin="254,16,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="ComboBox_SelectionChanged"/>
+        <Label Content="Port :" HorizontalAlignment="Left" Margin="204,14,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.101,0.298" Height="28"/>
+        <Button Name="button" Content="Start" HorizontalAlignment="Left" Margin="282,55,0,0" VerticalAlignment="Top" Width="82" Click="Button_Click" Height="47"/>
+        <CheckBox Name="timerCheck" Content="Timer" HorizontalAlignment="Left" Margin="204,55,0,0" VerticalAlignment="Top" Unchecked="TimerCheck_Unchecked" Checked="TimerCheck_Checked"/>
+        <StatusBar Name="statusBar" HorizontalAlignment="Left" Height="20" Margin="0,120,0,0" VerticalAlignment="Top" Width="384"/>
+        <TextBlock Name="statusText"  HorizontalAlignment="Left" Margin="5,120,0,0" TextWrapping="Wrap" Text="Ready" VerticalAlignment="Top" Width="170"/>
+        <TextBox Name="timeoutVal" HorizontalAlignment="Left" Height="23" Margin="194,79,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="37" TextChanged="TimeoutVal_TextChanged" Text="1"/>
+        <TextBlock HorizontalAlignment="Left" Margin="242,80,0,0" TextWrapping="Wrap" Text="min" VerticalAlignment="Top" Width="23" Height="17"/>
 
     </Grid>
 </Window>

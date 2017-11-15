@@ -1,8 +1,11 @@
-﻿using System.Windows;
-using System.Threading;
-using System.Windows.Controls;
+﻿using System;
+using System.ComponentModel;
 using System.IO.Ports;
-using System;
+using System.Threading;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Threading;
+using System.Diagnostics;
 
 namespace max30105_demo
 {
@@ -11,13 +14,20 @@ namespace max30105_demo
     /// </summary>
     public partial class MainWindow : Window
     {
+        private SerialPort serialPort = new SerialPort();
+        private bool useTimer;
+        private int timeout = 1;
+
+        DispatcherTimer dispatcherTimer = new DispatcherTimer();
+        public DispatcherTimer DispatcherTimer { get => dispatcherTimer; set => dispatcherTimer = value; }
+
         public MainWindow()
         {
             InitializeComponent();
             FindPorts();
+            //timerCheck.IsChecked = true;
+            Run();
         }
-
-        private SerialPort serialPort = new SerialPort();
 
         public void ErrorMsg(string msg)
         {
@@ -70,6 +80,11 @@ namespace max30105_demo
         {
             bool flag = false;
 
+            if (!serialPort.IsOpen)
+            {
+                return true;
+            }
+
             try
             {
                 serialPort.Close();
@@ -95,42 +110,17 @@ namespace max30105_demo
             return portsComboBox.Text;
         }
 
-        //private void ReadSerialPort(object sender, SerialDataReceivedEventArgs e)
-        //{
-        //    if (!(OpenPort()))
-        //    {
-        //        ErrorMsg("Port not opened");
-        //        return;
-        //    }
-        //    heartRateVal.Text = "ready";
-
-        //    //int bytesToRead = sp.BytesToRead;
-        //    //byte[] buf = new byte[bytesToRead];
-
-        //    //sp.Read(buf, 0, bytesToRead);
-
-
-        //    // string recvData = buf.ToString();
-        //    string recvData = serialPort.ReadExisting();
-        //    heartRateVal.Text = "reading";
-        //    heartRateVal.Text = recvData;
-        //}
-
-
         private string ReadPort(SerialPort sPort)
         {
             string readStr="";
 
-            if (!(sPort.IsOpen))
+            if (!sPort.IsOpen)
             {
                 return readStr;
             }
             if (sPort.BytesToRead > 0)
             {
                 readStr = sPort.ReadLine();
-                //string heartRate = recvData.Split('=')[1];
-
-                //Information(recvData);
             }
             return readStr;
         }
@@ -141,44 +131,139 @@ namespace max30105_demo
             string spo2 = status.Split(',')[1].Split('=')[1];
             this.Dispatcher.Invoke(() =>
             {
-                heartRateVal.Text = hRate;
+                heartRateVal.Text = hRate + "bpm";
                 spo2Val.Text = spo2;
             });
+        }
+
+
+        public void Run()
+        {
+            button.Content = "Stop";
+            statusText.Text = "Running...";
+
+            if (useTimer)
+            {
+                // start timer
+                TimerCtl("on");
+            }
+
+            OpenPort();
+            Thread read = new Thread(() =>
+            {
+                while (true)
+                {
+                    if (!serialPort.IsOpen)
+                    {
+                        return;
+                    }
+
+                    try
+                    {
+                        RefreshStatus(ReadPort(serialPort));
+                    } catch
+                    {
+                        //ErrorMsg(ex.Message);
+                    }
+                    Thread.Sleep(50);
+                }
+            });
+            read.Start();
+        }
+
+        private void DispatcherTimer_Tick(object sender, EventArgs e)
+        {
+            Information("Time is up!");
+
+            string locker = Environment.GetEnvironmentVariable("windir") + @"\System32\rundll32.exe";
+            Process.Start(locker, "user32.dll,LockWorkStation");
+        }
+
+        private void TimerCtl(string switchAction)
+        {
+            switch (switchAction)
+            {
+                case "on":
+                    dispatcherTimer.Tick += new EventHandler(DispatcherTimer_Tick);
+                    dispatcherTimer.Interval = new TimeSpan(0, timeout, 0);
+                    dispatcherTimer.Start();
+
+                    statusText.Text = "Running, timer started...";
+                    break;
+                case "off":
+                    dispatcherTimer.Stop();
+                    statusText.Text = "Timer stopped...";
+                    break;
+            }
+        }
+
+        public void Stop()
+        {
+            if (useTimer)
+            {
+                // stop timer
+                TimerCtl("off");
+            }
+
+            ClosePort();
+            button.Content = "Start";
+            statusText.Text = "Ready";
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             if (button.Content.ToString() == "Start")
             {
-                button.Content = "Stop";
-                OpenPort();
-                Thread read = new Thread(() =>
-                {
-                    while (true)
-                    {
-                        try
-                        {
-                            RefreshStatus(ReadPort(serialPort));
-                        } catch
-                        {
-                            //ErrorMsg(ex.Message);
-                        }
-                        Thread.Sleep(100);
-                    }
-                });
-                read.Start();
-                //heartRateVal.Text = ReadPort(serialPort);
+                Run();
             }
             else if (button.Content.ToString() == "Stop")
             {
-                ClosePort();
-                button.Content = "Start";
+                Stop();
             }
+        }
+
+        public void Window_Closing(object sender, CancelEventArgs e)
+        {
+            string msg = "Quit application";
+            MessageBoxResult result =
+              MessageBox.Show(
+                msg,
+                "Are you sure?",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            if (result == MessageBoxResult.No)
+            {
+                // If user doesn't want to close, cancel closure
+                e.Cancel = true;
+            }
+            Stop();
         }
 
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // nothing to do
+        }
 
+        private void TimerCheck_Unchecked(object sender, RoutedEventArgs e)
+        {
+            useTimer = false;
+            TimerCtl("off");
+        }
+
+        private void TimerCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            useTimer = true;
+            TimerCtl("on");
+        }
+
+        private void TimeoutVal_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!Int32.TryParse(timeoutVal.Text, out timeout) ||
+                timeoutVal.Text.Length > 3)
+            {
+                timeoutVal.Text = "1";
+                timeout = 1;
+            }
         }
     }
 }
