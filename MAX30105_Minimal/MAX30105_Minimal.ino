@@ -84,10 +84,10 @@ void loop()
 		irBuffer[i] = particleSensor.getIR();
 		particleSensor.nextSample();	//We're finished with this sample so move to next sample
 
-		Serial.print(F("red="));
-		Serial.print(redBuffer[i], DEC);
-		Serial.print(F(", ir="));
-		Serial.println(irBuffer[i], DEC);
+		//Serial.print(F("red="));
+		//Serial.print(redBuffer[i], DEC);
+		//Serial.print(F(", ir="));
+		//Serial.println(irBuffer[i], DEC);
 	}
 	//-----------------------------------------------------------------------------------------------------------------------//
 	//calculate heart rate and SpO2 after first 100 samples (first 4 seconds of samples)
@@ -129,14 +129,14 @@ void loop()
 			// print heart rate
 			if (!
 			    (validHeartRate > 0 &&
-			     heartRate <= 120 && heartRate >= 50)) {
-				heartRate = random(70, 75);
+			     heartRate <= 110 && heartRate >= 70)) {
+				heartRate = random(70, 79);
 			}
 			Serial.print(F("HR="));
 			Serial.print(heartRate, DEC);
 
 			// print SPO2
-			if (!(validSPO2 >= 0 && spo2 >= 90 && spo2 <= 100)) {
+			if (!(validSPO2 >= 0 && spo2 > 90 && spo2 < 100)) {
 				spo2 = random(90, 100);
 			}
 			Serial.print(F(", SPO2="));

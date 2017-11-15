@@ -118,17 +118,42 @@ namespace max30105_demo
             {
                 return readStr;
             }
+
             if (sPort.BytesToRead > 0)
             {
                 readStr = sPort.ReadLine();
             }
+
+            if (!readStr.Contains("HR="))
+            {
+                return "";
+            }
+
             return readStr;
         }
 
         private void RefreshStatus(string status)
         {
-            string hRate = status.Split(',')[0].Split('=')[1];
-            string spo2 = status.Split(',')[1].Split('=')[1];
+            if (status == "")
+            {
+                return;
+            }
+
+            string hRate, spo2;
+            //Random rand = new Random();
+            try
+            {
+                hRate = status.Split(',')[0].Split('=')[1];
+                spo2 = status.Split(',')[1].Split('=')[1];
+                //} catch (Exception ex)
+            } catch
+            {
+                //this.Dispatcher.Invoke(() =>
+                //{
+                //    debug.Text = "Debug refresh: " + ex.Message;
+                //});
+                return;
+            }
             this.Dispatcher.Invoke(() =>
             {
                 heartRateVal.Text = hRate + "bpm";
@@ -146,6 +171,7 @@ namespace max30105_demo
             {
                 // start timer
                 TimerCtl("on");
+                statusText.Text = "Running, timer started...";
             }
 
             OpenPort();
@@ -161,19 +187,35 @@ namespace max30105_demo
                     try
                     {
                         RefreshStatus(ReadPort(serialPort));
-                    } catch
+                    } catch (Exception ex)
                     {
-                        //ErrorMsg(ex.Message);
+                        debug.Text = "Debug main: " + ex.Message;
                     }
-                    Thread.Sleep(50);
+                    //RefreshStatus(ReadPort(serialPort));
+                    Thread.Sleep(100);
                 }
             });
             read.Start();
         }
 
+        public void Stop()
+        {
+            if (useTimer)
+            {
+                // stop timer
+                TimerCtl("off");
+            }
+
+            ClosePort();
+            heartRateVal.Text = "0bpm";
+            spo2Val.Text = "0%";
+            button.Content = "Start";
+            statusText.Text = "Ready";
+        }
+
         private void DispatcherTimer_Tick(object sender, EventArgs e)
         {
-            Information("Time is up!");
+            //Information("Time is up!");
 
             string locker = Environment.GetEnvironmentVariable("windir") + @"\System32\rundll32.exe";
             Process.Start(locker, "user32.dll,LockWorkStation");
@@ -188,26 +230,18 @@ namespace max30105_demo
                     dispatcherTimer.Interval = new TimeSpan(0, timeout, 0);
                     dispatcherTimer.Start();
 
-                    statusText.Text = "Running, timer started...";
+                    statusText.Text = "Timer started";
+
+                    if (serialPort.IsOpen)
+                    {
+                        statusText.Text = "Running, timer started...";
+                    }
                     break;
                 case "off":
                     dispatcherTimer.Stop();
-                    statusText.Text = "Timer stopped...";
+                    statusText.Text = "Timer canceled";
                     break;
             }
-        }
-
-        public void Stop()
-        {
-            if (useTimer)
-            {
-                // stop timer
-                TimerCtl("off");
-            }
-
-            ClosePort();
-            button.Content = "Start";
-            statusText.Text = "Ready";
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -224,13 +258,13 @@ namespace max30105_demo
 
         public void Window_Closing(object sender, CancelEventArgs e)
         {
-            string msg = "Quit application";
+            string msg = "Are you sure?";
             MessageBoxResult result =
               MessageBox.Show(
                 msg,
-                "Are you sure?",
+                "Quiting",
                 MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
+                MessageBoxImage.Question);
             if (result == MessageBoxResult.No)
             {
                 // If user doesn't want to close, cancel closure
