@@ -1,4 +1,3 @@
-
 #include <Wire.h>
 #include "MAX30105.h"
 #include "spo2_algorithm.h"
@@ -121,7 +120,7 @@ void loop()
 				/* Serial.print("No finger!\n"); */
 				Serial.print(F("HR="));
 				Serial.print(0, DEC);
-				Serial.print(F(", SPO2="));
+				Serial.print(F(",SPO2="));
 				Serial.print(0, DEC);
 				Serial.println("%");
 				continue;
@@ -129,7 +128,7 @@ void loop()
 			// print heart rate
 			if (!
 			    (validHeartRate > 0 &&
-			     heartRate <= 110 && heartRate >= 70)) {
+			     heartRate <= 130 && heartRate >= 50)) {
 				heartRate = random(70, 79);
 			}
 			Serial.print(F("HR="));
@@ -151,21 +150,3 @@ void loop()
 						       &validHeartRate);
 	}
 }
-
- //----------------------------------------------------------------------------------------------------------------------//
-
-    // Make sure to call update as fast as possible
-   // pox.update();
-
-    // Asynchronously dump heart rate and oxidation levels to the serial
-    // For both, a value of 0 means "invalid"
-    //if (millis() - tsLastReport > REPORTING_PERIOD_MS) {
-    //    Serial.print("Heart rate:");
-    //    Serial.print(pox.getHeartRate());
-    //    Serial.print("bpm / SpO2:");
-    //    Serial.print(pox.getSpO2());
-    //    Serial.println("%");
-
-    //    tsLastReport = millis();
-    //}
-//}
