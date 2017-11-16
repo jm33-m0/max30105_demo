@@ -20,7 +20,6 @@ namespace max30105_demo
 
         private Thread read;
         private Thread finger;
-        //private bool fingerThreadSwitch = true;
 
         DispatcherTimer dispatcherTimer = new DispatcherTimer();
         public DispatcherTimer DispatcherTimer { get => dispatcherTimer; set => dispatcherTimer = value; }
@@ -29,7 +28,7 @@ namespace max30105_demo
         {
             InitializeComponent();
             FindPorts();
-            //StartFingerHanlder();
+            Run();
         }
 
         public void ErrorMsg(string msg)
@@ -147,55 +146,52 @@ namespace max30105_demo
             return readStr;
         }
 
-        private void RefreshStatus(string status)
+        private bool RefreshStatus(string status)
         {
+            // can also be used to detect finger presence
+            bool flag = false;
+
             if (status == "")
             {
-                return;
+                return flag;
+            }
+
+            if (status == "HR=0,SPO2=0%")
+            {
+                //return flag;
+                flag = false;
+
+                this.Dispatcher.Invoke(() =>
+                {
+
+                });
             }
 
             string hRate, spo2;
-            //Random rand = new Random();
             try
             {
                 hRate = status.Split(',')[0].Split('=')[1];
                 spo2 = status.Split(',')[1].Split('=')[1];
-                //} catch (Exception ex)
+                flag = true;
             } catch
             {
-                //this.Dispatcher.Invoke(() =>
-                //{
-                //    debug.Text = "Debug refresh: " + ex.Message;
-                //});
-                return;
+                return flag;
             }
 
 
-            //this.Dispatcher.Invoke(() =>
-            //{
+            this.Dispatcher.Invoke(() =>
+            {
                 heartRateVal.Text = hRate + "bpm";
                 spo2Val.Text = spo2;
-            //});
+            });
+
+            return flag;
         }
-
-        //private bool IsFinger()
-        //{
-        //    string pollPort = ReadPort(serialPort);
-
-        //    if (pollPort.Contains("HR=0") ||
-        //        pollPort.Contains("SPO2=0"))
-        //    {
-        //        return false;
-        //    }
-        //    return true;
-        //}
 
         public void Run()
         {
             button.Content = "Stop";
             statusText.Text = "Running...";
-
-            //fingerThreadSwitch = true;
 
             if (useTimer)
             {
@@ -214,26 +210,24 @@ namespace max30105_demo
                         return;
                     }
 
-                    this.Dispatcher.Invoke(() =>
-                    {
-                        //if (!IsFinger())
-                        //{
-                        //    Stop();
-                        //} else
-                        //{
-                        //    RefreshStatus(ReadPort(serialPort));
-                        //}
-                        RefreshStatus(ReadPort(serialPort));
-                    });
-
-                    //try
+                    //this.Dispatcher.Invoke(() =>
                     //{
-                    //    RefreshStatus(ReadPort(serialPort));
-                    //} catch
-                    //{
-                    //    // do nth
-                    //}
-                    Thread.Sleep(100);
+                    //    if (!RefreshStatus(ReadPort(serialPort)))
+                    //    {
+                    //        //Stop();
+                    //        //TimerCtl("off");
+                    //        //timerCheck.IsChecked = false;
+                    //        //statusText.Text = "No finger";
+                    //        heartRateVal.Text = "0bpm";
+                    //        spo2Val.Text = "0%";
+                    //    }
+                    //    else
+                    //    {
+                    //        statusText.Text = "Finger detected, running...";
+                    //    }
+                    //});
+                    RefreshStatus(ReadPort(serialPort));
+                    Thread.Sleep(66);
                 }
             });
             read.Start();
@@ -254,14 +248,10 @@ namespace max30105_demo
             spo2Val.Text = "0%";
             button.Content = "Start";
             statusText.Text = "Ready";
-
-            //fingerThreadSwitch = false;
         }
 
         private void DispatcherTimer_Tick(object sender, EventArgs e)
         {
-            //Information("Time is up!");
-
             string locker = Environment.GetEnvironmentVariable("windir") + @"\System32\rundll32.exe";
             Process.Start(locker, "user32.dll,LockWorkStation");
         }
@@ -292,36 +282,6 @@ namespace max30105_demo
 
             return flag;
         }
-
-        //private void StartFingerHanlder()
-        //{
-        //    fingerThreadSwitch = true;
-
-        //    finger = new Thread(() =>
-        //    {
-        //        while (true)
-        //        {
-        //            if (!fingerThreadSwitch)
-        //            {
-        //                return;
-        //            }
-
-        //            this.Dispatcher.Invoke(() =>
-        //            {
-        //                if (!IsFinger())
-        //                {
-        //                    Stop();
-        //                } else
-        //                {
-        //                    timerCheck.IsChecked = true;
-        //                    Run();
-        //                }
-        //            });
-        //            Thread.Sleep(10);
-        //        }
-        //    });
-        //    finger.Start();
-        //}
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
