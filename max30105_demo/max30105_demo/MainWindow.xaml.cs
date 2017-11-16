@@ -264,7 +264,7 @@ namespace max30105_demo
             {
                 case "on":
                     dispatcherTimer.Tick += new EventHandler(DispatcherTimer_Tick);
-                    dispatcherTimer.Interval = new TimeSpan(0, timeout, 0);
+                    dispatcherTimer.Interval = new TimeSpan(0, 0, timeout);
                     dispatcherTimer.Start();
 
                     statusText.Text = "Timer started";
@@ -335,9 +335,11 @@ namespace max30105_demo
             if (!Int32.TryParse(timeoutVal.Text, out timeout) ||
                 timeoutVal.Text.Length > 3)
             {
-                timeoutVal.Text = "1";
-                timeout = 1;
+                timeoutVal.Text = "30";
+                timeout = 30;
             }
+
+            timerCheck.IsChecked = false;
         }
 
         private void FingerDection_Checked(object sender, RoutedEventArgs e)
