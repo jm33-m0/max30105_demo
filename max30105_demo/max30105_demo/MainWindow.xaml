@@ -17,13 +17,13 @@
         <ComboBox Name="portsComboBox" HorizontalAlignment="Left" Margin="254,16,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="ComboBox_SelectionChanged"/>
         <Label Content="Port :" HorizontalAlignment="Left" Margin="212,14,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.101,0.298" Height="28"/>
         <Button Name="button" Content="Start" FontSize="26" HorizontalAlignment="Left" Margin="213,73,0,0" VerticalAlignment="Top" Width="161" Click="Button_Click" Height="47"/>
-        <CheckBox Name="timerCheck" Content="Lock screen after" HorizontalAlignment="Left" Margin="22,90,0,0" VerticalAlignment="Top" Unchecked="TimerCheck_Unchecked" Checked="TimerCheck_Checked"/>
+        <CheckBox Name="timerCheck" Content="Lock screen after" HorizontalAlignment="Left" Margin="22,108,0,0" VerticalAlignment="Top" Unchecked="TimerCheck_Unchecked" Checked="TimerCheck_Checked"/>
         <StatusBar Name="statusBar" HorizontalAlignment="Left" Height="30" Margin="0,141,0,0" VerticalAlignment="Top" Width="384">
             <TextBlock x:Name="statusText"  HorizontalAlignment="Left" TextWrapping="Wrap" Text="Ready" VerticalAlignment="Top" Width="170" Height="26"/>
         </StatusBar>
-        <TextBox Name="timeoutVal" HorizontalAlignment="Left" Height="23" Margin="139,88,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="36" TextChanged="TimeoutVal_TextChanged" Text="1"/>
-        <TextBlock HorizontalAlignment="Left" Margin="184,89,0,0" TextWrapping="Wrap" Text="min" VerticalAlignment="Top" Width="24" Height="17" RenderTransformOrigin="-0.826,0.794"/>
-        <TextBlock Name="debug" HorizontalAlignment="Left" Margin="0,110,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="134" Height="26"/>
+        <TextBox Name="timeoutVal" HorizontalAlignment="Left" Height="23" Margin="136,106,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="36" TextChanged="TimeoutVal_TextChanged" Text="30"/>
+        <TextBlock HorizontalAlignment="Left" Margin="177,106,0,0" TextWrapping="Wrap" Text="s" VerticalAlignment="Top" Width="24" Height="17" RenderTransformOrigin="-0.826,0.794"/>
+        <CheckBox Name="fingerDection" Content="Finger detection" HorizontalAlignment="Left" Margin="22,84,0,0" VerticalAlignment="Top" Checked="FingerDection_Checked"/>
 
     </Grid>
 </Window>

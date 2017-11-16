@@ -19,7 +19,6 @@ namespace max30105_demo
         private int timeout = 1;
 
         private Thread read;
-        private Thread finger;
 
         DispatcherTimer dispatcherTimer = new DispatcherTimer();
         public DispatcherTimer DispatcherTimer { get => dispatcherTimer; set => dispatcherTimer = value; }
@@ -134,7 +133,7 @@ namespace max30105_demo
                     readStr = sPort.ReadLine();
                 } catch (Exception ex)
                 {
-                    debug.Text = ex.Message;
+                    ErrorMsg("ReadPort: " + ex.Message);
                 }
             }
 
@@ -150,21 +149,40 @@ namespace max30105_demo
         {
             // can also be used to detect finger presence
             bool flag = false;
+            bool fingerDectionChecked = false;
 
             if (status == "")
             {
                 return flag;
             }
 
-            if (status == "HR=0,SPO2=0%")
+
+            this.Dispatcher.Invoke(() =>
             {
-                //return flag;
-                flag = false;
+                fingerDectionChecked = fingerDection.IsChecked == true;
+            });
 
-                this.Dispatcher.Invoke(() =>
+            if (fingerDectionChecked)
+            {
+                if (status.Contains("HR=0"))
                 {
+                    //return flag;
+                    flag = false;
 
-                });
+                    this.Dispatcher.Invoke(() =>
+                    {
+                        statusText.Text = "No finger";
+                        timerCheck.IsChecked = false;
+                    });
+                }
+                else
+                {
+                    this.Dispatcher.Invoke(() =>
+                    {
+                        statusText.Text = "Finger detected, running...";
+                        timerCheck.IsChecked = true;
+                    });
+                }
             }
 
             string hRate, spo2;
@@ -209,23 +227,6 @@ namespace max30105_demo
                     {
                         return;
                     }
-
-                    //this.Dispatcher.Invoke(() =>
-                    //{
-                    //    if (!RefreshStatus(ReadPort(serialPort)))
-                    //    {
-                    //        //Stop();
-                    //        //TimerCtl("off");
-                    //        //timerCheck.IsChecked = false;
-                    //        //statusText.Text = "No finger";
-                    //        heartRateVal.Text = "0bpm";
-                    //        spo2Val.Text = "0%";
-                    //    }
-                    //    else
-                    //    {
-                    //        statusText.Text = "Finger detected, running...";
-                    //    }
-                    //});
                     RefreshStatus(ReadPort(serialPort));
                     Thread.Sleep(66);
                 }
@@ -337,6 +338,11 @@ namespace max30105_demo
                 timeoutVal.Text = "1";
                 timeout = 1;
             }
+        }
+
+        private void FingerDection_Checked(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
