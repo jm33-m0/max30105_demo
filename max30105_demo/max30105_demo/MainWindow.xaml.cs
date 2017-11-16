@@ -18,6 +18,10 @@ namespace max30105_demo
         private bool useTimer;
         private int timeout = 1;
 
+        private Thread read;
+        private Thread finger;
+        //private bool fingerThreadSwitch = true;
+
         DispatcherTimer dispatcherTimer = new DispatcherTimer();
         public DispatcherTimer DispatcherTimer { get => dispatcherTimer; set => dispatcherTimer = value; }
 
@@ -25,8 +29,7 @@ namespace max30105_demo
         {
             InitializeComponent();
             FindPorts();
-            //timerCheck.IsChecked = true;
-            Run();
+            //StartFingerHanlder();
         }
 
         public void ErrorMsg(string msg)
@@ -58,6 +61,12 @@ namespace max30105_demo
         private bool OpenPort()
         {
             bool flag = false;
+
+            if (serialPort.IsOpen)
+            {
+                return true;
+            }
+
             ConfigurePort();
 
             try
@@ -65,7 +74,7 @@ namespace max30105_demo
                 serialPort.Open();
                 serialPort.DiscardInBuffer();
                 serialPort.DiscardOutBuffer();
-                Information(string.Format("Port {0} opened, Baud rate {1}", serialPort.PortName, serialPort.BaudRate.ToString()));
+                //Information(string.Format("Port {0} opened, Baud rate {1}", serialPort.PortName, serialPort.BaudRate.ToString()));
                 flag = true;
             }
             catch (Exception ex)
@@ -88,7 +97,7 @@ namespace max30105_demo
             try
             {
                 serialPort.Close();
-                Information(string.Format("Port {0} closed", serialPort.PortName));
+                //Information(string.Format("Port {0} closed", serialPort.PortName));
                 flag = true;
             }
             catch (Exception ex)
@@ -121,7 +130,13 @@ namespace max30105_demo
 
             if (sPort.BytesToRead > 0)
             {
-                readStr = sPort.ReadLine();
+                try
+                {
+                    readStr = sPort.ReadLine();
+                } catch (Exception ex)
+                {
+                    debug.Text = ex.Message;
+                }
             }
 
             if (!readStr.Contains("HR="))
@@ -154,18 +169,33 @@ namespace max30105_demo
                 //});
                 return;
             }
-            this.Dispatcher.Invoke(() =>
-            {
+
+
+            //this.Dispatcher.Invoke(() =>
+            //{
                 heartRateVal.Text = hRate + "bpm";
                 spo2Val.Text = spo2;
-            });
+            //});
         }
 
+        //private bool IsFinger()
+        //{
+        //    string pollPort = ReadPort(serialPort);
+
+        //    if (pollPort.Contains("HR=0") ||
+        //        pollPort.Contains("SPO2=0"))
+        //    {
+        //        return false;
+        //    }
+        //    return true;
+        //}
 
         public void Run()
         {
             button.Content = "Stop";
             statusText.Text = "Running...";
+
+            //fingerThreadSwitch = true;
 
             if (useTimer)
             {
@@ -175,7 +205,7 @@ namespace max30105_demo
             }
 
             OpenPort();
-            Thread read = new Thread(() =>
+            read = new Thread(() =>
             {
                 while (true)
                 {
@@ -184,18 +214,30 @@ namespace max30105_demo
                         return;
                     }
 
-                    try
+                    this.Dispatcher.Invoke(() =>
                     {
+                        //if (!IsFinger())
+                        //{
+                        //    Stop();
+                        //} else
+                        //{
+                        //    RefreshStatus(ReadPort(serialPort));
+                        //}
                         RefreshStatus(ReadPort(serialPort));
-                    } catch (Exception ex)
-                    {
-                        debug.Text = "Debug main: " + ex.Message;
-                    }
-                    //RefreshStatus(ReadPort(serialPort));
+                    });
+
+                    //try
+                    //{
+                    //    RefreshStatus(ReadPort(serialPort));
+                    //} catch
+                    //{
+                    //    // do nth
+                    //}
                     Thread.Sleep(100);
                 }
             });
             read.Start();
+
         }
 
         public void Stop()
@@ -204,6 +246,7 @@ namespace max30105_demo
             {
                 // stop timer
                 TimerCtl("off");
+                timerCheck.IsChecked = false;
             }
 
             ClosePort();
@@ -211,6 +254,8 @@ namespace max30105_demo
             spo2Val.Text = "0%";
             button.Content = "Start";
             statusText.Text = "Ready";
+
+            //fingerThreadSwitch = false;
         }
 
         private void DispatcherTimer_Tick(object sender, EventArgs e)
@@ -221,8 +266,9 @@ namespace max30105_demo
             Process.Start(locker, "user32.dll,LockWorkStation");
         }
 
-        private void TimerCtl(string switchAction)
+        private bool TimerCtl(string switchAction)
         {
+            bool flag = false;
             switch (switchAction)
             {
                 case "on":
@@ -236,13 +282,46 @@ namespace max30105_demo
                     {
                         statusText.Text = "Running, timer started...";
                     }
+                    flag = true;
                     break;
                 case "off":
                     dispatcherTimer.Stop();
                     statusText.Text = "Timer canceled";
                     break;
             }
+
+            return flag;
         }
+
+        //private void StartFingerHanlder()
+        //{
+        //    fingerThreadSwitch = true;
+
+        //    finger = new Thread(() =>
+        //    {
+        //        while (true)
+        //        {
+        //            if (!fingerThreadSwitch)
+        //            {
+        //                return;
+        //            }
+
+        //            this.Dispatcher.Invoke(() =>
+        //            {
+        //                if (!IsFinger())
+        //                {
+        //                    Stop();
+        //                } else
+        //                {
+        //                    timerCheck.IsChecked = true;
+        //                    Run();
+        //                }
+        //            });
+        //            Thread.Sleep(10);
+        //        }
+        //    });
+        //    finger.Start();
+        //}
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
