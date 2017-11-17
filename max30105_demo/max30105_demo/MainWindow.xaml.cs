@@ -1,11 +1,12 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.IO.Ports;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using System.Diagnostics;
 
 namespace max30105_demo
 {
@@ -16,16 +17,28 @@ namespace max30105_demo
     {
         private SerialPort serialPort = new SerialPort();
         private bool useTimer;
-        private int timeout = 1;
+        private int timeout = 120;
+        private int hrCount, spo2Count;
+
+        //public int hrLvlow, spo2Lvlow, hrLvHi, spo2LvHi;
 
         private Thread read;
 
-        DispatcherTimer dispatcherTimer = new DispatcherTimer();
-        public DispatcherTimer DispatcherTimer { get => dispatcherTimer; set => dispatcherTimer = value; }
+        DispatcherTimer mainTimer = new DispatcherTimer();
+        DispatcherTimer assistTimer = new DispatcherTimer();
+        public DispatcherTimer Maintimer { get => mainTimer; set => mainTimer = value; }
+        public DispatcherTimer AssistTimer { get => assistTimer; set => assistTimer = value; }
 
         public MainWindow()
         {
             InitializeComponent();
+
+            if (CheckMinimize())
+            {
+                minimizeCheck.IsChecked = true;
+            }
+
+            fingerDection.IsChecked = true;
             FindPorts();
             Run();
         }
@@ -33,6 +46,18 @@ namespace max30105_demo
         public void ErrorMsg(string msg)
         {
             MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        public bool Alert(string msg)
+        {
+            bool retVal = false;
+            MessageBoxResult answ = MessageBox.Show(msg, "Alert", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (answ == MessageBoxResult.Yes)
+            {
+                retVal = true;
+            }
+            return retVal;
         }
 
         public void Information(string msg)
@@ -72,7 +97,6 @@ namespace max30105_demo
                 serialPort.Open();
                 serialPort.DiscardInBuffer();
                 serialPort.DiscardOutBuffer();
-                //Information(string.Format("Port {0} opened, Baud rate {1}", serialPort.PortName, serialPort.BaudRate.ToString()));
                 flag = true;
             }
             catch (Exception ex)
@@ -95,7 +119,6 @@ namespace max30105_demo
             try
             {
                 serialPort.Close();
-                //Information(string.Format("Port {0} closed", serialPort.PortName));
                 flag = true;
             }
             catch (Exception ex)
@@ -145,6 +168,45 @@ namespace max30105_demo
             return readStr;
         }
 
+        private void Check_HRSPO2(string hr, string spo2)
+        {
+            int hrVal = Int32.Parse(hr);
+            int spo2Val = Int32.Parse(spo2);
+
+            if (hrVal >= 120 || hrVal <= 72)
+            {
+                Outbox.Text += "Abnormal HR: " + hr + "\n";
+                hrCount++;
+            }
+
+            if (spo2Val > 95 || spo2Val <= 90)
+            {
+                Outbox.Text += "Abnormal SPO2: " + spo2 + "\n";
+                spo2Count++;
+            }
+            Outbox.Focus();
+            Outbox.CaretIndex = Outbox.Text.Length;
+            Outbox.ScrollToEnd();
+
+            if (spo2Count > 30)
+            {
+                if (Alert("Check your SPO2 data"))
+                {
+                    Visibility = Visibility.Visible;
+                    WindowState = WindowState.Normal;
+                }
+                spo2Count = 0;
+            } else if (hrCount > 30)
+            {
+                if (Alert("Check your heartrate data"))
+                {
+                    Visibility = Visibility.Visible;
+                    WindowState = WindowState.Normal;
+                }
+                hrCount = 0;
+            }
+        }
+
         private bool RefreshStatus(string status)
         {
             // can also be used to detect finger presence
@@ -162,29 +224,6 @@ namespace max30105_demo
                 fingerDectionChecked = fingerDection.IsChecked == true;
             });
 
-            if (fingerDectionChecked)
-            {
-                if (status.Contains("HR=0"))
-                {
-                    //return flag;
-                    flag = false;
-
-                    this.Dispatcher.Invoke(() =>
-                    {
-                        statusText.Text = "No finger";
-                        timerCheck.IsChecked = false;
-                    });
-                }
-                else
-                {
-                    this.Dispatcher.Invoke(() =>
-                    {
-                        statusText.Text = "Finger detected, running...";
-                        timerCheck.IsChecked = true;
-                    });
-                }
-            }
-
             string hRate, spo2;
             try
             {
@@ -196,7 +235,53 @@ namespace max30105_demo
                 return flag;
             }
 
+            if (fingerDectionChecked)
+            {
+                if (status.Contains("HR=0"))
+                {
+                    //return flag;
+                    flag = false;
 
+                    this.Dispatcher.Invoke(() =>
+                    {
+                        statusText.Text = "No finger";
+
+                        if (!assistTimer.IsEnabled)
+                        {
+                            assistTimer.Interval= new TimeSpan(0, 0, 5);
+                            assistTimer.Tick += new EventHandler(AssistTimer_Tick);
+                            assistTimer.Start();
+                        }
+                    });
+                }
+                else
+                {
+                    this.Dispatcher.Invoke(() =>
+                    {
+                        statusText.Text = "Finger detected, running...";
+
+                        assistTimer.Stop();
+                        if (timerCheck.IsChecked == false)
+                        {
+                            timerCheck.IsChecked = true;
+                        }
+                    });
+                }
+            }
+
+            if (!status.Contains("HR=0") ||
+                !status.Contains("SPO2=0%"))
+            {
+                this.Dispatcher.Invoke(() =>
+                {
+                    // Check HR and SPO2
+                    spo2 = spo2.Split('%')[0];
+                    Check_HRSPO2(hRate, spo2);
+                });
+            }
+
+
+            // Display values
             this.Dispatcher.Invoke(() =>
             {
                 heartRateVal.Text = hRate + "bpm";
@@ -214,7 +299,7 @@ namespace max30105_demo
             if (useTimer)
             {
                 // start timer
-                TimerCtl("on");
+                MainTimerCtl("on");
                 statusText.Text = "Running, timer started...";
             }
 
@@ -240,7 +325,7 @@ namespace max30105_demo
             if (useTimer)
             {
                 // stop timer
-                TimerCtl("off");
+                MainTimerCtl("off");
                 timerCheck.IsChecked = false;
             }
 
@@ -251,21 +336,31 @@ namespace max30105_demo
             statusText.Text = "Ready";
         }
 
-        private void DispatcherTimer_Tick(object sender, EventArgs e)
+        // what happens after timeout
+        private void MainTimer_Tick(object sender, EventArgs e)
         {
             string locker = Environment.GetEnvironmentVariable("windir") + @"\System32\rundll32.exe";
             Process.Start(locker, "user32.dll,LockWorkStation");
         }
 
-        private bool TimerCtl(string switchAction)
+        private void AssistTimer_Tick(object sender, EventArgs e)
+        {
+            if (mainTimer.IsEnabled)
+            {
+                timerCheck.IsChecked = false;
+            }
+        }
+
+        // switch on/off the timer
+        private bool MainTimerCtl(string switchAction)
         {
             bool flag = false;
             switch (switchAction)
             {
                 case "on":
-                    dispatcherTimer.Tick += new EventHandler(DispatcherTimer_Tick);
-                    dispatcherTimer.Interval = new TimeSpan(0, 0, timeout);
-                    dispatcherTimer.Start();
+                    mainTimer.Tick += new EventHandler(MainTimer_Tick);
+                    mainTimer.Interval = new TimeSpan(0, 0, timeout);
+                    mainTimer.Start();
 
                     statusText.Text = "Timer started";
 
@@ -276,7 +371,7 @@ namespace max30105_demo
                     flag = true;
                     break;
                 case "off":
-                    dispatcherTimer.Stop();
+                    mainTimer.Stop();
                     statusText.Text = "Timer canceled";
                     break;
             }
@@ -321,13 +416,13 @@ namespace max30105_demo
         private void TimerCheck_Unchecked(object sender, RoutedEventArgs e)
         {
             useTimer = false;
-            TimerCtl("off");
+            MainTimerCtl("off");
         }
 
         private void TimerCheck_Checked(object sender, RoutedEventArgs e)
         {
             useTimer = true;
-            TimerCtl("on");
+            MainTimerCtl("on");
         }
 
         private void TimeoutVal_TextChanged(object sender, TextChangedEventArgs e)
@@ -344,7 +439,59 @@ namespace max30105_demo
 
         private void FingerDection_Checked(object sender, RoutedEventArgs e)
         {
+            // nothing to do, since `IsChecked` is enough
+        }
 
+        // read config file and decide if need to minimize window on start
+        private bool CheckMinimize()
+        {
+            bool minimize = false;
+            if (!File.Exists(@".\demo.conf"))
+            {
+                return minimize;
+            }
+
+            StreamReader file = new StreamReader(@".\demo.conf");
+            string line;
+
+            while ((line = file.ReadLine()) != null)
+            {
+                if (line.Trim() == "minimize")
+                {
+                    file.Close();
+                    minimize = true;
+                    break;
+                }
+            }
+            return minimize;
+        }
+
+        private void Minimize_Checked(object sender, RoutedEventArgs e)
+        {
+            StreamWriter fileW = new StreamWriter(@".\demo.conf");
+            fileW.WriteLine("minimize");
+            fileW.Close();
+
+            string msg = "Going to background...\nYou will have to end this app in task manager yourself";
+            MessageBoxResult result =
+              MessageBox.Show(
+                msg,
+                "Proceed?",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+            if (result == MessageBoxResult.No)
+            {
+                minimizeCheck.IsChecked = false;
+                return;
+            }
+            Hide();
+        }
+
+        private void Minimize_Unchecked(object sender, RoutedEventArgs e)
+        {
+            StreamWriter fileW = new StreamWriter(@".\demo.conf");
+            fileW.Write("");
+            fileW.Close();
         }
     }
 }

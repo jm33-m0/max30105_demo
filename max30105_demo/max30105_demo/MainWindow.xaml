@@ -5,10 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:max30105_demo"
         mc:Ignorable="d"
-        Title="Onion Reader" Height="200" Width="400"
+        Title="Onion Reader" Height="300" Width="420"
         WindowStartupLocation="CenterScreen"
         Closing="Window_Closing"
-        ResizeMode="NoResize">
+        ResizeMode="CanMinimize">
     <Grid>
         <TextBlock Name="heartRateVal" HorizontalAlignment="Left" Margin="31,54,0,0" TextWrapping="Wrap" VerticalAlignment="Top" RenderTransformOrigin="0.261,2.842" Height="30" Width="57" Text="0 bpm"/>
         <Label Content="Heart Rate" HorizontalAlignment="Left" Margin="22,14,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.495,0.816"/>
@@ -16,14 +16,17 @@
         <Label Content="SPO2" HorizontalAlignment="Left" Margin="117,14,0,0" VerticalAlignment="Top"/>
         <ComboBox Name="portsComboBox" HorizontalAlignment="Left" Margin="254,16,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="ComboBox_SelectionChanged"/>
         <Label Content="Port :" HorizontalAlignment="Left" Margin="212,14,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.101,0.298" Height="28"/>
-        <Button Name="button" Content="Start" FontSize="26" HorizontalAlignment="Left" Margin="213,73,0,0" VerticalAlignment="Top" Width="161" Click="Button_Click" Height="47"/>
-        <CheckBox Name="timerCheck" Content="Lock screen after" HorizontalAlignment="Left" Margin="22,108,0,0" VerticalAlignment="Top" Unchecked="TimerCheck_Unchecked" Checked="TimerCheck_Checked"/>
-        <StatusBar Name="statusBar" HorizontalAlignment="Left" Height="30" Margin="0,141,0,0" VerticalAlignment="Top" Width="384">
+        <Button Name="button" Content="Start" FontSize="26" HorizontalAlignment="Left" Margin="213,182,0,0" VerticalAlignment="Top" Width="161" Click="Button_Click" Height="47"/>
+        <CheckBox Name="timerCheck" Content="Lock screen after" HorizontalAlignment="Left" Margin="213,94,0,0" VerticalAlignment="Top" Unchecked="TimerCheck_Unchecked" Checked="TimerCheck_Checked"/>
+        <StatusBar Name="statusBar" HorizontalAlignment="Left" Height="30" Margin="0,241,0,0" VerticalAlignment="Top" Width="404">
             <TextBlock x:Name="statusText"  HorizontalAlignment="Left" TextWrapping="Wrap" Text="Ready" VerticalAlignment="Top" Width="170" Height="26"/>
         </StatusBar>
-        <TextBox Name="timeoutVal" HorizontalAlignment="Left" Height="23" Margin="136,106,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="36" TextChanged="TimeoutVal_TextChanged" Text="30"/>
-        <TextBlock HorizontalAlignment="Left" Margin="177,106,0,0" TextWrapping="Wrap" Text="s" VerticalAlignment="Top" Width="24" Height="17" RenderTransformOrigin="-0.826,0.794"/>
-        <CheckBox Name="fingerDection" Content="Finger detection" HorizontalAlignment="Left" Margin="22,84,0,0" VerticalAlignment="Top" Checked="FingerDection_Checked"/>
+        <TextBox Name="timeoutVal" HorizontalAlignment="Left" Height="23" Margin="327,92,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="36" TextChanged="TimeoutVal_TextChanged" Text="120" RenderTransformOrigin="0.444,0.304"/>
+        <TextBlock HorizontalAlignment="Left" Margin="368,92,0,0" TextWrapping="Wrap" Text="s" VerticalAlignment="Top" Width="16" Height="17" RenderTransformOrigin="-0.826,0.794"/>
+        <CheckBox Name="fingerDection" Content="Finger detection" HorizontalAlignment="Left" Margin="213,62,0,0" VerticalAlignment="Top" Checked="FingerDection_Checked"/>
+        <CheckBox Name="minimizeCheck"  Content="Run in background" HorizontalAlignment="Left" Margin="213,130,0,0" VerticalAlignment="Top" Unchecked="Minimize_Unchecked" Checked="Minimize_Checked"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,88,0,0" TextWrapping="Wrap" Text="Status:" FontSize="16" VerticalAlignment="Top"/>
+        <TextBox Name="Outbox" HorizontalAlignment="Left" Height="107" Margin="10,122,0,0" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AcceptsReturn="True" VerticalAlignment="Top" Width="198"/>
 
     </Grid>
 </Window>
