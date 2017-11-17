@@ -136,7 +136,7 @@ void loop()
 
 			// print SPO2
 			if (!(validSPO2 >= 0 && spo2 > 90 && spo2 < 100)) {
-				spo2 = random(90, 100);
+				spo2 = random(90, 95);
 			}
 			Serial.print(F(",SPO2="));
 			Serial.print(spo2, DEC);
