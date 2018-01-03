@@ -66,7 +66,7 @@ void setup()
 	}
 	unblockedValue /= 32;
 
-	randomSeed(analogRead(0));	// what if we dont have desired value?
+	randomSeed(analogRead(0));	// what if we dont have desired value? 使用随机数替换掉不想要的数据，这里是种子
 }
 
 void loop()

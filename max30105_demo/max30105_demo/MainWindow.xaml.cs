@@ -31,16 +31,18 @@ namespace max30105_demo
 
         public MainWindow()
         {
+            // 初始化窗口
             InitializeComponent();
 
+            // 如果配置文件写了启动不显示窗口，则勾选后台运行选项，隐藏窗口
             if (CheckMinimize())
             {
                 minimizeCheck.IsChecked = true;
             }
 
-            fingerDection.IsChecked = true;
-            FindPorts();
-            Run();
+            fingerDection.IsChecked = true; // 默认使用手指感应功能
+            FindPorts(); // 寻找串口连接的传感器
+            Run(); // run方法负责启动程序主要功能
         }
 
         public void ErrorMsg(string msg)
@@ -168,11 +170,13 @@ namespace max30105_demo
             return readStr;
         }
 
+        // 用于检测血氧和心率值是否符合报警条件
         private void Check_HRSPO2(string hr, string spo2)
         {
             int hrVal = Int32.Parse(hr);
             int spo2Val = Int32.Parse(spo2);
 
+            // 这里是报警范围
             if (hrVal >= 120 || hrVal <= 72)
             {
                 Outbox.Text += "Abnormal HR: " + hr + "\n";
@@ -184,10 +188,12 @@ namespace max30105_demo
                 Outbox.Text += "Abnormal SPO2: " + spo2 + "\n";
                 spo2Count++;
             }
+            // 有异常数据则记录在status框里
             Outbox.Focus();
             Outbox.CaretIndex = Outbox.Text.Length;
             Outbox.ScrollToEnd();
 
+            // 任意一个值累计达到30个异常之后，弹出报警对话框
             if (spo2Count > 30)
             {
                 if (Alert("Check your SPO2 data"))
@@ -207,6 +213,7 @@ namespace max30105_demo
             }
         }
 
+        // 用来刷新实时的心率血氧值显示
         private bool RefreshStatus(string status)
         {
             // can also be used to detect finger presence
@@ -222,8 +229,10 @@ namespace max30105_demo
             this.Dispatcher.Invoke(() =>
             {
                 fingerDectionChecked = fingerDection.IsChecked == true;
+                // 如果开了手指感应，知会一下本方法
             });
 
+            // 处理串口数据，使之符合输出格式要求
             string hRate, spo2;
             try
             {
@@ -235,9 +244,10 @@ namespace max30105_demo
                 return flag;
             }
 
+            // 如果选了手指感应，这里探测一波有没有手指
             if (fingerDectionChecked)
             {
-                if (status.Contains("HR=0"))
+                if (status.Contains("HR=0")) // 只要含有0值，那么很显然没有手指
                 {
                     //return flag;
                     flag = false;
@@ -246,6 +256,7 @@ namespace max30105_demo
                     {
                         statusText.Text = "No finger";
 
+                        // 这里为了避免手指短暂离开传感器造成不必要的计时终止，设置了延时停止计时的机制
                         if (!assistTimer.IsEnabled)
                         {
                             assistTimer.Interval= new TimeSpan(0, 0, 5);
@@ -254,7 +265,7 @@ namespace max30105_demo
                         }
                     });
                 }
-                else
+                else // 不然的话就是有手指了，那就开始运行 (这里说的运行其实就是显示数值加监控加倒计时锁屏)
                 {
                     this.Dispatcher.Invoke(() =>
                     {
@@ -263,7 +274,7 @@ namespace max30105_demo
                         assistTimer.Stop();
                         if (timerCheck.IsChecked == false)
                         {
-                            timerCheck.IsChecked = true;
+                            timerCheck.IsChecked = true; // 这里自动勾选上倒计时锁屏
                         }
                     });
                 }
@@ -275,6 +286,7 @@ namespace max30105_demo
                 this.Dispatcher.Invoke(() =>
                 {
                     // Check HR and SPO2
+                    // 这里来检查数值是否可以触发报警
                     spo2 = spo2.Split('%')[0];
                     Check_HRSPO2(hRate, spo2);
                 });
@@ -282,6 +294,7 @@ namespace max30105_demo
 
 
             // Display values
+            // 显示数值
             this.Dispatcher.Invoke(() =>
             {
                 heartRateVal.Text = hRate + "bpm";
@@ -291,6 +304,7 @@ namespace max30105_demo
             return flag;
         }
 
+        // 本方法是程序启动默认运行的流程
         public void Run()
         {
             button.Content = "Stop";
@@ -303,23 +317,25 @@ namespace max30105_demo
                 statusText.Text = "Running, timer started...";
             }
 
-            OpenPort();
+            OpenPort(); // 打开串口进行读取
+            // 这里开了个独立线程去读取并显示数值
             read = new Thread(() =>
             {
                 while (true)
                 {
-                    if (!serialPort.IsOpen)
+                    if (!serialPort.IsOpen) // 串口没开就回去歇着吧
                     {
                         return;
                     }
                     RefreshStatus(ReadPort(serialPort));
-                    Thread.Sleep(66);
+                    Thread.Sleep(66); // 每66毫秒刷新一次
                 }
             });
-            read.Start();
+            read.Start(); // 启动这个线程
 
         }
 
+        // 本方法用来停止，对应停止按钮
         public void Stop()
         {
             if (useTimer)
@@ -337,12 +353,14 @@ namespace max30105_demo
         }
 
         // what happens after timeout
+        // 锁屏倒计时
         private void MainTimer_Tick(object sender, EventArgs e)
         {
             string locker = Environment.GetEnvironmentVariable("windir") + @"\System32\rundll32.exe";
             Process.Start(locker, "user32.dll,LockWorkStation");
         }
 
+        // 避免暂时离开手指中断计时的延时计时器
         private void AssistTimer_Tick(object sender, EventArgs e)
         {
             if (mainTimer.IsEnabled)
@@ -352,6 +370,7 @@ namespace max30105_demo
         }
 
         // switch on/off the timer
+        // 这个是锁屏计时器的开关方法
         private bool MainTimerCtl(string switchAction)
         {
             bool flag = false;
@@ -379,6 +398,7 @@ namespace max30105_demo
             return flag;
         }
 
+        // 点了按钮会发生啥
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             if (button.Content.ToString() == "Start")
@@ -443,6 +463,7 @@ namespace max30105_demo
         }
 
         // read config file and decide if need to minimize window on start
+        // 读取配置文件，来决定是不是启动时就隐藏窗口
         private bool CheckMinimize()
         {
             bool minimize = false;
@@ -487,6 +508,7 @@ namespace max30105_demo
             Hide();
         }
 
+        // 如果想取消启动时隐藏窗口的功能，那就清空配置文件
         private void Minimize_Unchecked(object sender, RoutedEventArgs e)
         {
             StreamWriter fileW = new StreamWriter(@".\demo.conf");
